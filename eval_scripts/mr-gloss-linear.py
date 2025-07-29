@@ -7,7 +7,7 @@ from torch.utils.data import DataLoader, TensorDataset
 from sklearn.metrics import accuracy_score
 import os
 
-dataset = 'mr'
+dataset = 'mr'  
 loss= 'gloss'
 emb_path = f'../embeddings/{dataset}/{loss}'
 # Safely load .pt files regardless of original device
