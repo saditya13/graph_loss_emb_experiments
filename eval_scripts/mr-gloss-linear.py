@@ -1,5 +1,4 @@
 import os.path
-
 import torch
 import torch.nn as nn
 import torch.optim as optim
@@ -8,7 +7,7 @@ from sklearn.metrics import accuracy_score
 import os
 
 dataset = 'mr'
-loss= 'gloss'
+loss= 'cos-sim'
 emb_path = f'../embeddings/{dataset}/{loss}'
 # Safely load .pt files regardless of original device
 device = torch.device("cpu")
@@ -20,7 +19,7 @@ test_emb = torch.load(os.path.join(emb_path,"test_emb.pt"), map_location=device)
 test_labels = torch.load(os.path.join(emb_path,"test_labels.pt"), map_location=device)
 
 # DataLoader setup
-batch_size = 64
+batch_size = 128
 train_loader = DataLoader(TensorDataset(train_emb, train_labels), batch_size=batch_size, shuffle=True)
 val_loader = DataLoader(TensorDataset(val_emb, val_labels), batch_size=batch_size)
 test_loader = DataLoader(TensorDataset(test_emb, test_labels), batch_size=batch_size)
