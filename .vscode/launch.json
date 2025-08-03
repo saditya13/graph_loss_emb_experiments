@@ -3,12 +3,11 @@
   "configurations": [
     {
       "name": "Python: Run Script",
-      "type": "debugpy",
+      "type": "debugpy",  // 
       "request": "launch",
-      "program": "${file}",
+      "program": "${file}",  // runs the currently open file
       "console": "integratedTerminal",
-      "justMyCode": false,
-      "python": "C:\\Users\\adity\\AppData\\Local\\Programs\\Python\\Python313\\python.exe"
+      "justMyCode": false
     }
   ]
 }
