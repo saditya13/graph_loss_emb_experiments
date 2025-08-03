@@ -7,7 +7,7 @@ from sklearn.metrics import accuracy_score
 import os
 
 dataset = 'mr'
-loss= 'cos-sim'
+loss= 'gloss'
 emb_path = f'../embeddings/{dataset}/{loss}'
 # Safely load .pt files regardless of original device
 device = torch.device("cpu")
