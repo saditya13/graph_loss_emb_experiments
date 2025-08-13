@@ -3,8 +3,11 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 from torch.utils.data import DataLoader, TensorDataset
+from torch.optim.lr_scheduler import LambdaLR
 from sklearn.metrics import accuracy_score
+import matplotlib.pyplot as plt
 import os
+
 
 dataset = 'mr'
 loss= 'gloss'
@@ -39,8 +42,13 @@ num_classes = len(torch.unique(train_labels))
 model = LinearClassifier(input_dim, num_classes)
 
 # Loss and optimizer
+num_steps = len(train_loader)
+lr_start = 1e-7
+lr_end = 1
+gamma = (lr_end/lr_start)** (1/num_steps)
 criterion = nn.CrossEntropyLoss()
-optimizer = optim.Adam(model.parameters(), lr=0.0001, weight_decay=1e-4)
+optimizer = optim.Adam(model.parameters(), lr=lr_start, weight_decay=1e-4)
+scheduler = torch.optim.lr_scheduler.MultiplicativeLR(optimizer, lr_lambda=lambda _: gamma)
 
 # Training with early stopping
 num_epochs = 100
@@ -48,14 +56,28 @@ best_val_acc = 0.0
 patience = 10
 patience_counter = 0
 
+lrs , losses = [],[]
+
 for epoch in range(num_epochs):
     model.train()
-    for x_batch, y_batch in train_loader:
+    running_loss = 0.0
+    for step, (x_batch, y_batch) in enumerate(train_loader):
         optimizer.zero_grad()
         outputs = model(x_batch)
         loss = criterion(outputs, y_batch)
+
+        lrs.append(optimizer.param_groups[0]["lr"])
+        losses.append(loss.item())
+
         loss.backward()
         optimizer.step()
+        scheduler.step()
+        running_loss += loss.item() * x_batch.size(0)
+
+        
+        if step > 0 and loss.item() > 4 * min(losses):
+            break
+    avg_loss = running_loss / len(train_loader.dataset)
 
     # Validation
     model.eval()
@@ -68,19 +90,26 @@ for epoch in range(num_epochs):
             val_true.extend(y_batch.tolist())
 
     val_acc = accuracy_score(val_true, val_preds)
-    print(f"Epoch {epoch+1} — Validation Accuracy: {val_acc:.4f}")
+    # print(f"Epoch {epoch+1} — Validation Accuracy: {val_acc:.4f}")
+    print(f"Epoch {epoch+1}/{num_epochs} — Train Loss: {avg_loss:.4f} — Val Acc: {val_acc:.4f}")
 
     if val_acc > best_val_acc:
         best_val_acc = val_acc
         patience_counter = 0
         torch.save(model.state_dict(), "best_linear_model.pt")
-    # else:
-    #     patience_counter += 1
-    #     if patience_counter >= patience:
-    #         print("Early stopping triggered.")
-    #         break
+    else:
+        patience_counter += 1
+        if patience_counter >= patience:
+            print("Early stopping triggered.")
+            break
 
-
+# Plot learning rate vs. loss
+plt.plot(lrs, losses)
+plt.xscale("log")
+plt.xlabel("Learning Rate")
+plt.ylabel("Loss")
+plt.title("Learning Rate Finder")
+plt.show()
 
 # Test Evaluation
 model.load_state_dict(torch.load("best_linear_model.pt", map_location=device))
